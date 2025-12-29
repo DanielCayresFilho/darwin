@@ -7,6 +7,14 @@
 Dockerfile
 .dockerignore
 docker-compose.yml
+docker-compose.prod.yml
+docker-compose.mysql.yml
+
+# Configurações de servidor (não usar no Coolify/Nixpacks)
+nginx.conf
+nginx.conf.example
+php-fpm-custom.conf
+start.sh
 
 # Node
 node_modules
@@ -54,9 +62,8 @@ storage/framework/views/*
 tests
 phpunit.xml
 
-# Scripts locais
+# Scripts locais (bloqueados - Nixpacks não usa)
 *.sh
-!start.sh
 
 # Documentação
 README.md
