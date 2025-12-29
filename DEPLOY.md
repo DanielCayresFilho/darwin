@@ -1,6 +1,10 @@
 # 🚀 Guia de Deploy - Darwin (Laravel App)
 
-Este guia fornece instruções passo a passo para fazer deploy da aplicação em produção.
+⚠️ **ATENÇÃO**: Este repositório foi otimizado para deploy via **Coolify**.
+
+Para deploy no Coolify, use o arquivo **QUICKSTART-COOLIFY.md** (muito mais fácil!)
+
+Este guia (DEPLOY.md) é para deploy standalone/manual, que requer configuração adicional.
 
 ---
 
@@ -177,12 +181,16 @@ docker compose -f docker-compose.prod.yml restart nginx
 
 ---
 
-## 📝 Nota Importante sobre nginx.conf
+## 📝 Nota Importante
 
-O arquivo `nginx.conf.example` é usado apenas para deploy standalone com Docker Compose.
+**Arquivos removidos para compatibilidade com Coolify:**
+- `nginx.conf` / `nginx.conf.example` - Causavam conflito
+- `Dockerfile` - Nixpacks detecta automaticamente
+- `php-fpm-custom.conf` - Não necessário
+- `start.sh` - Nixpacks gerencia inicialização
 
-- **Para Coolify**: Ignore este arquivo, o Coolify gerencia o Nginx automaticamente
-- **Para deploy standalone**: O docker-compose.prod.yml já está configurado para usar nginx.conf.example
+**Para deploy standalone:** Você precisará recriar esses arquivos ou usar outra estratégia.
+**Para Coolify:** Use o QUICKSTART-COOLIFY.md (recomendado!)
 
 ---
 

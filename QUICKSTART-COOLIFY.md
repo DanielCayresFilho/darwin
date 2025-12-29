@@ -1,11 +1,14 @@
 # ⚡ DEPLOY RÁPIDO NO COOLIFY - 5 MINUTOS
 
-## ✅ IMPORTANTE: Auto-Detecção do Laravel
+## ✅ TUDO LIMPO E OTIMIZADO PARA COOLIFY!
 
-Este repositório **NÃO tem** arquivo `nixpacks.toml`.
-O Coolify vai **detectar automaticamente** que é Laravel e configurar tudo!
+Este repositório foi **OTIMIZADO** para Coolify:
+- ❌ SEM nginx.conf (Coolify gerencia)
+- ❌ SEM Dockerfile (Nixpacks detecta automaticamente)
+- ❌ SEM arquivos de configuração que causam conflito
+- ✅ APENAS código Laravel puro
 
-Você não precisa fazer nada além de seguir os passos abaixo. 🚀
+O Coolify vai **detectar automaticamente** que é Laravel e configurar tudo! 🚀
 
 ---
 
