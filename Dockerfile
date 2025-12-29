@@ -58,13 +58,17 @@ RUN chown -R www-data:www-data /var/www/html && \
     chmod -R 775 /var/www/html/storage && \
     chmod -R 775 /var/www/html/bootstrap/cache
 
+# Copiar configuração customizada do PHP-FPM
+COPY php-fpm-custom.conf /usr/local/etc/php-fpm.d/zzz-custom.conf
+
+# Configurar PHP-FPM para trabalhar com Nginx do Coolify
+RUN sed -i 's/listen = .*/listen = 0.0.0.0:9000/' /usr/local/etc/php-fpm.d/www.conf && \
+    sed -i 's/;clear_env = no/clear_env = no/' /usr/local/etc/php-fpm.d/www.conf && \
+    sed -i 's/listen.allowed_clients = 127.0.0.1/;listen.allowed_clients = 0.0.0.0/' /usr/local/etc/php-fpm.d/www.conf || true
+
 # Copiar script de inicialização
 COPY start.sh /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh
-
-# Configurar PHP-FPM para trabalhar com Nginx do Coolify
-RUN sed -i 's/listen = \/run\/php\/php8.2-fpm.sock/listen = 0.0.0.0:9000/' /usr/local/etc/php-fpm.d/www.conf && \
-    sed -i 's/;clear_env = no/clear_env = no/' /usr/local/etc/php-fpm.d/www.conf
 
 # Expor porta do PHP-FPM
 EXPOSE 9000

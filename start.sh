@@ -54,8 +54,20 @@ if [ ! -L /var/www/html/public/storage ]; then
 fi
 
 echo "✅ Inicialização concluída!"
-echo "🌐 Iniciando PHP-FPM..."
 
-# Iniciar PHP-FPM
-exec php-fpm
+# Verificar configuração do PHP-FPM
+echo "🔍 Verificando configuração do PHP-FPM..."
+echo "📋 Configurações ativas:"
+grep -E "^(listen|listen.allowed_clients|clear_env)" /usr/local/etc/php-fpm.d/*.conf || echo "⚠️  Não foi possível ler configurações"
+
+# Garantir que está escutando na porta correta
+if ! grep -q "listen = 0.0.0.0:9000" /usr/local/etc/php-fpm.d/www.conf 2>/dev/null; then
+    echo "⚠️  Ajustando configuração do PHP-FPM..."
+    sed -i 's/listen = .*/listen = 0.0.0.0:9000/' /usr/local/etc/php-fpm.d/www.conf
+fi
+
+echo "🌐 Iniciando PHP-FPM na porta 9000..."
+
+# Iniciar PHP-FPM em foreground
+exec php-fpm -F
 
