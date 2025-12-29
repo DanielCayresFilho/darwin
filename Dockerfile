@@ -41,11 +41,33 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Configurar diretório de trabalho
 WORKDIR /var/www/html
 
-# Copiar arquivos do projeto
+# Copiar apenas arquivos necessários primeiro (otimização de cache)
+COPY composer.json composer.lock ./
+COPY package.json package-lock.json ./
+
+# Instalar dependências do Composer (sem dev, sem scripts)
+# Desabilitar completamente os scripts do composer durante o build
+RUN COMPOSER_ALLOW_SUPERUSER=1 COMPOSER_DISABLE_XDEBUG_WARN=1 \
+    composer install --no-dev --no-interaction --optimize-autoloader --no-scripts --no-autoloader
+
+# Copiar resto dos arquivos
 COPY . .
 
-# Instalar dependências do Composer (sem dev para produção)
-RUN composer install --no-dev --no-interaction --optimize-autoloader --no-scripts
+# Criar .env básico para evitar erros durante build (será sobrescrito pelo Coolify)
+RUN if [ ! -f .env ]; then \
+        echo "APP_NAME=Laravel" > .env && \
+        echo "APP_ENV=production" >> .env && \
+        echo "APP_KEY=" >> .env && \
+        echo "APP_DEBUG=false" >> .env && \
+        echo "APP_URL=http://localhost" >> .env && \
+        echo "DB_CONNECTION=mysql" >> .env; \
+    fi
+
+# Completar instalação do Composer (gerar autoloader, mas SEM scripts)
+# Desabilitar descoberta automática de pacotes durante o build
+RUN COMPOSER_ALLOW_SUPERUSER=1 COMPOSER_DISABLE_XDEBUG_WARN=1 \
+    LARAVEL_SKIP_PACKAGE_DISCOVERY=1 \
+    composer dump-autoload --optimize --no-scripts --no-interaction
 
 # Instalar dependências do NPM e compilar assets
 RUN npm ci --production=false && \
