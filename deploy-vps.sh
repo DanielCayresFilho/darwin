@@ -82,20 +82,38 @@ if [ ! -f /usr/bin/node ]; then
 fi
 
 # 7. Criar diretório da aplicação
-echo -e "${YELLOW}📁 Criando diretório da aplicação...${NC}"
-mkdir -p $APP_DIR
-cd $APP_DIR
+echo -e "${YELLOW}📁 Preparando diretório da aplicação...${NC}"
 
-# 8. Clonar ou atualizar repositório (ajuste a URL do seu repositório)
-echo -e "${YELLOW}📥 Clonando/Atualizando repositório...${NC}"
-if [ -d "$APP_DIR/.git" ]; then
-    echo "  Repositório já existe, fazendo pull..."
-    git pull
+# Verificar se o diretório já existe
+if [ -d "$APP_DIR" ]; then
+    if [ -d "$APP_DIR/.git" ]; then
+        echo "  ✅ Diretório já existe e é um repositório Git"
+        cd $APP_DIR
+        echo "  📥 Fazendo pull para atualizar..."
+        git pull || echo "  ⚠️  Erro ao fazer pull, continuando..."
+    else
+        echo -e "${YELLOW}  ⚠️  Diretório $APP_DIR já existe mas não é um repositório Git${NC}"
+        read -p "  Deseja limpar o diretório e clonar novamente? (s/n): " CLEAN_DIR
+        if [ "$CLEAN_DIR" = "s" ] || [ "$CLEAN_DIR" = "S" ]; then
+            echo "  🗑️  Limpando diretório..."
+            rm -rf $APP_DIR/*
+            rm -rf $APP_DIR/.* 2>/dev/null || true
+            read -p "  Digite a URL do repositório Git: " REPO_URL
+            git clone $REPO_URL $APP_DIR
+            cd $APP_DIR
+        else
+            echo "  ℹ️  Usando diretório existente. Certifique-se de que os arquivos estão corretos."
+            cd $APP_DIR
+        fi
+    fi
 else
-    echo "  Clonando repositório..."
-    # Ajuste a URL do seu repositório Git
-    read -p "Digite a URL do repositório Git: " REPO_URL
+    echo "  📁 Criando diretório..."
+    mkdir -p $APP_DIR
+    cd $APP_DIR
+    echo "  📥 Clonando repositório..."
+    read -p "  Digite a URL do repositório Git: " REPO_URL
     git clone $REPO_URL $APP_DIR
+    cd $APP_DIR
 fi
 
 # 9. Instalar dependências do Composer
