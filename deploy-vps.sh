@@ -34,14 +34,25 @@ fi
 echo -e "${YELLOW}📦 Atualizando sistema...${NC}"
 apt update && apt upgrade -y
 
-# 2. Instalar dependências
-echo -e "${YELLOW}📦 Instalando dependências...${NC}"
+# 2. Adicionar repositório do PHP (Ondrej PPA)
+echo -e "${YELLOW}📦 Adicionando repositório do PHP...${NC}"
+apt install -y software-properties-common
+add-apt-repository -y ppa:ondrej/php
+apt update
+
+# 3. Instalar dependências básicas
+echo -e "${YELLOW}📦 Instalando dependências básicas...${NC}"
 apt install -y \
-    software-properties-common \
     curl \
     git \
     unzip \
     nginx \
+    certbot \
+    python3-certbot-nginx
+
+# 4. Instalar PHP e extensões
+echo -e "${YELLOW}📦 Instalando PHP ${PHP_VERSION} e extensões...${NC}"
+apt install -y \
     php${PHP_VERSION}-fpm \
     php${PHP_VERSION}-cli \
     php${PHP_VERSION}-common \
@@ -53,11 +64,9 @@ apt install -y \
     php${PHP_VERSION}-xml \
     php${PHP_VERSION}-bcmath \
     php${PHP_VERSION}-intl \
-    php${PHP_VERSION}-opcache \
-    certbot \
-    python3-certbot-nginx
+    php${PHP_VERSION}-opcache
 
-# 3. Instalar Composer
+# 5. Instalar Composer
 echo -e "${YELLOW}📦 Instalando Composer...${NC}"
 if [ ! -f /usr/local/bin/composer ]; then
     curl -sS https://getcomposer.org/installer | php
@@ -65,19 +74,19 @@ if [ ! -f /usr/local/bin/composer ]; then
     chmod +x /usr/local/bin/composer
 fi
 
-# 4. Instalar Node.js 18.x
+# 6. Instalar Node.js 18.x
 echo -e "${YELLOW}📦 Instalando Node.js...${NC}"
 if [ ! -f /usr/bin/node ]; then
     curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
     apt install -y nodejs
 fi
 
-# 5. Criar diretório da aplicação
+# 7. Criar diretório da aplicação
 echo -e "${YELLOW}📁 Criando diretório da aplicação...${NC}"
 mkdir -p $APP_DIR
 cd $APP_DIR
 
-# 6. Clonar ou atualizar repositório (ajuste a URL do seu repositório)
+# 8. Clonar ou atualizar repositório (ajuste a URL do seu repositório)
 echo -e "${YELLOW}📥 Clonando/Atualizando repositório...${NC}"
 if [ -d "$APP_DIR/.git" ]; then
     echo "  Repositório já existe, fazendo pull..."
@@ -89,24 +98,24 @@ else
     git clone $REPO_URL $APP_DIR
 fi
 
-# 7. Instalar dependências do Composer
+# 9. Instalar dependências do Composer
 echo -e "${YELLOW}📦 Instalando dependências do Composer...${NC}"
 cd $APP_DIR
 composer install --no-dev --optimize-autoloader --no-interaction
 
-# 8. Instalar dependências do NPM e compilar assets
+# 10. Instalar dependências do NPM e compilar assets
 echo -e "${YELLOW}📦 Instalando dependências do NPM e compilando assets...${NC}"
 npm ci --production=false
 npm run production
 
-# 9. Configurar permissões
+# 11. Configurar permissões
 echo -e "${YELLOW}🔐 Configurando permissões...${NC}"
 chown -R $APP_USER:$APP_USER $APP_DIR
 chmod -R 755 $APP_DIR
 chmod -R 775 $APP_DIR/storage
 chmod -R 775 $APP_DIR/bootstrap/cache
 
-# 10. Configurar arquivo .env
+# 12. Configurar arquivo .env
 echo -e "${YELLOW}⚙️  Configurando arquivo .env...${NC}"
 if [ ! -f $APP_DIR/.env ]; then
     cp $APP_DIR/.env.example $APP_DIR/.env
@@ -118,22 +127,22 @@ fi
 # Gerar APP_KEY se não existir
 php artisan key:generate --force || true
 
-# 11. Executar migrações
+# 13. Executar migrações
 echo -e "${YELLOW}📦 Executando migrações...${NC}"
 php artisan migrate --force --no-interaction
 
-# 12. Criar link simbólico para storage
+# 14. Criar link simbólico para storage
 echo -e "${YELLOW}🔗 Criando link simbólico para storage...${NC}"
 php artisan storage:link || true
 
-# 13. Otimizar Laravel
+# 15. Otimizar Laravel
 echo -e "${YELLOW}⚡ Otimizando Laravel...${NC}"
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 php artisan event:cache
 
-# 14. Configurar Nginx
+# 16. Configurar Nginx
 echo -e "${YELLOW}🌐 Configurando Nginx...${NC}"
 cp $APP_DIR/nginx.conf /etc/nginx/sites-available/$APP_NAME
 ln -sf /etc/nginx/sites-available/$APP_NAME /etc/nginx/sites-enabled/
@@ -144,21 +153,21 @@ rm -f /etc/nginx/sites-enabled/default
 # Testar configuração do Nginx
 nginx -t
 
-# 15. Configurar SSL com Let's Encrypt
+# 17. Configurar SSL com Let's Encrypt
 echo -e "${YELLOW}🔒 Configurando SSL...${NC}"
 read -p "Deseja configurar SSL com Let's Encrypt? (s/n): " SETUP_SSL
 if [ "$SETUP_SSL" = "s" ] || [ "$SETUP_SSL" = "S" ]; then
     certbot --nginx -d $DOMAIN --non-interactive --agree-tos --email admin@$DOMAIN || echo "⚠️  Erro ao configurar SSL. Configure manualmente depois."
 fi
 
-# 16. Reiniciar serviços
+# 18. Reiniciar serviços
 echo -e "${YELLOW}🔄 Reiniciando serviços...${NC}"
 systemctl restart php${PHP_VERSION}-fpm
 systemctl restart nginx
 systemctl enable php${PHP_VERSION}-fpm
 systemctl enable nginx
 
-# 17. Configurar firewall (se necessário)
+# 19. Configurar firewall (se necessário)
 echo -e "${YELLOW}🔥 Configurando firewall...${NC}"
 if command -v ufw &> /dev/null; then
     ufw allow 'Nginx Full'
