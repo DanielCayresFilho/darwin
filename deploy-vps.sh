@@ -40,7 +40,30 @@ apt install -y software-properties-common
 add-apt-repository -y ppa:ondrej/php
 apt update
 
-# 3. Instalar dependências básicas
+# 3. Instalar Docker e Docker Compose
+echo -e "${YELLOW}🐳 Instalando Docker e Docker Compose...${NC}"
+if ! command -v docker &> /dev/null; then
+    apt install -y \
+        ca-certificates \
+        curl \
+        gnupg \
+        lsb-release
+    
+    # Adicionar repositório do Docker
+    mkdir -p /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    
+    apt update
+    apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+    systemctl enable docker
+    systemctl start docker
+    echo -e "${GREEN}  ✅ Docker instalado${NC}"
+else
+    echo -e "${GREEN}  ✅ Docker já está instalado${NC}"
+fi
+
+# 4. Instalar dependências básicas
 echo -e "${YELLOW}📦 Instalando dependências básicas...${NC}"
 apt install -y \
     curl \
@@ -50,7 +73,7 @@ apt install -y \
     certbot \
     python3-certbot-nginx
 
-# 4. Instalar PHP e extensões
+# 5. Instalar PHP e extensões
 echo -e "${YELLOW}📦 Instalando PHP ${PHP_VERSION} e extensões...${NC}"
 apt install -y \
     php${PHP_VERSION}-fpm \
@@ -66,7 +89,7 @@ apt install -y \
     php${PHP_VERSION}-intl \
     php${PHP_VERSION}-opcache
 
-# 5. Instalar Composer
+# 6. Instalar Composer
 echo -e "${YELLOW}📦 Instalando Composer...${NC}"
 if [ ! -f /usr/local/bin/composer ]; then
     curl -sS https://getcomposer.org/installer | php
@@ -74,14 +97,14 @@ if [ ! -f /usr/local/bin/composer ]; then
     chmod +x /usr/local/bin/composer
 fi
 
-# 6. Instalar Node.js 18.x
+# 7. Instalar Node.js 18.x
 echo -e "${YELLOW}📦 Instalando Node.js...${NC}"
 if [ ! -f /usr/bin/node ]; then
     curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
     apt install -y nodejs
 fi
 
-# 7. Criar diretório da aplicação
+# 8. Criar diretório da aplicação
 echo -e "${YELLOW}📁 Preparando diretório da aplicação...${NC}"
 
 # Verificar se o diretório já existe
@@ -116,7 +139,19 @@ else
     cd $APP_DIR
 fi
 
-# 9. Configurar arquivo .env ANTES de instalar dependências
+# 9. Subir MySQL via Docker
+echo -e "${YELLOW}🐳 Subindo MySQL via Docker...${NC}"
+cd $APP_DIR
+if [ -f docker-compose.mysql.yml ]; then
+    docker compose -f docker-compose.mysql.yml up -d
+    echo -e "${GREEN}  ✅ MySQL iniciado${NC}"
+    echo -e "${YELLOW}  ⏳ Aguardando MySQL ficar pronto (30 segundos)...${NC}"
+    sleep 30
+else
+    echo -e "${YELLOW}  ⚠️  Arquivo docker-compose.mysql.yml não encontrado, pulando...${NC}"
+fi
+
+# 10. Configurar arquivo .env ANTES de instalar dependências
 echo -e "${YELLOW}⚙️  Configurando arquivo .env...${NC}"
 if [ ! -f $APP_DIR/.env ]; then
     if [ -f $APP_DIR/.env.example ]; then
@@ -148,18 +183,18 @@ else
     echo -e "${GREEN}  Arquivo .env já existe${NC}"
 fi
 
-# Atualizar configurações do banco de dados no .env (sobrescrever se necessário)
+# Atualizar configurações do banco de dados no .env (usar MySQL local via Docker)
 echo -e "${YELLOW}  Atualizando configurações do banco de dados no .env...${NC}"
-sed -i 's/^DB_HOST=.*/DB_HOST=ucg084w44sw84kssgs00sg0g/' $APP_DIR/.env
-sed -i 's/^DB_PORT=.*/DB_PORT=3306/' $APP_DIR/.env
-sed -i 's/^DB_DATABASE=.*/DB_DATABASE=default/' $APP_DIR/.env
-sed -i 's/^DB_USERNAME=.*/DB_USERNAME=mysql/' $APP_DIR/.env
-sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=9ifRaRf16HTxrxdwEtB1vTnU78QAQ2kZOfDUscmKObbBp4VXwL9VIYMn28FsJ4A7/' $APP_DIR/.env
-sed -i 's/^APP_URL=.*/APP_URL=https:\/\/'${DOMAIN}'/' $APP_DIR/.env
-sed -i 's/^APP_ENV=.*/APP_ENV=production/' $APP_DIR/.env
-sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' $APP_DIR/.env
+sed -i 's/^DB_HOST=.*/DB_HOST=127.0.0.1/' $APP_DIR/.env || echo "DB_HOST=127.0.0.1" >> $APP_DIR/.env
+sed -i 's/^DB_PORT=.*/DB_PORT=3306/' $APP_DIR/.env || echo "DB_PORT=3306" >> $APP_DIR/.env
+sed -i 's/^DB_DATABASE=.*/DB_DATABASE=default/' $APP_DIR/.env || echo "DB_DATABASE=default" >> $APP_DIR/.env
+sed -i 's/^DB_USERNAME=.*/DB_USERNAME=mysql/' $APP_DIR/.env || echo "DB_USERNAME=mysql" >> $APP_DIR/.env
+sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=9ifRaRf16HTxrxdwEtB1vTnU78QAQ2kZOfDUscmKObbBp4VXwL9VIYMn28FsJ4A7/' $APP_DIR/.env || echo "DB_PASSWORD=9ifRaRf16HTxrxdwEtB1vTnU78QAQ2kZOfDUscmKObbBp4VXwL9VIYMn28FsJ4A7" >> $APP_DIR/.env
+sed -i 's/^APP_URL=.*/APP_URL=https:\/\/'${DOMAIN}'/' $APP_DIR/.env || echo "APP_URL=https://${DOMAIN}" >> $APP_DIR/.env
+sed -i 's/^APP_ENV=.*/APP_ENV=production/' $APP_DIR/.env || echo "APP_ENV=production" >> $APP_DIR/.env
+sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' $APP_DIR/.env || echo "APP_DEBUG=false" >> $APP_DIR/.env
 
-echo -e "${GREEN}  ✅ Configurações do banco de dados atualizadas${NC}"
+echo -e "${GREEN}  ✅ Configurações do banco de dados atualizadas (MySQL local via Docker)${NC}"
 
 # Gerar APP_KEY se não existir
 if ! grep -q "APP_KEY=base64:" $APP_DIR/.env 2>/dev/null; then
@@ -168,7 +203,7 @@ if ! grep -q "APP_KEY=base64:" $APP_DIR/.env 2>/dev/null; then
     php artisan key:generate --force || echo "⚠️  Erro ao gerar APP_KEY"
 fi
 
-# 10. Instalar dependências do Composer (sem scripts para evitar erro de conexão)
+# 11. Instalar dependências do Composer (sem scripts para evitar erro de conexão)
 echo -e "${YELLOW}📦 Instalando dependências do Composer...${NC}"
 cd $APP_DIR
 COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
@@ -179,38 +214,38 @@ echo -e "${YELLOW}📦 Gerando autoloader e executando scripts...${NC}"
 php artisan package:discover --ansi || echo "⚠️  Aviso: Alguns pacotes não puderam ser descobertos (normal se Telescope não estiver instalado)"
 composer dump-autoload --optimize --no-interaction --no-scripts || composer dump-autoload --optimize --no-interaction
 
-# 11. Instalar dependências do NPM e compilar assets
+# 12. Instalar dependências do NPM e compilar assets
 echo -e "${YELLOW}📦 Instalando dependências do NPM e compilando assets...${NC}"
 npm ci --production=false
 npm run production
 
-# 12. Configurar permissões
+# 13. Configurar permissões
 echo -e "${YELLOW}🔐 Configurando permissões...${NC}"
 chown -R $APP_USER:$APP_USER $APP_DIR
 chmod -R 755 $APP_DIR
 chmod -R 775 $APP_DIR/storage
 chmod -R 775 $APP_DIR/bootstrap/cache
 
-# 13. Testar conexão com banco de dados
+# 14. Testar conexão com banco de dados
 echo -e "${YELLOW}🔍 Testando conexão com banco de dados...${NC}"
 php artisan db:show --quiet 2>/dev/null && echo "✅ Conexão com banco OK" || echo -e "${YELLOW}⚠️  Não foi possível conectar ao banco. Verifique as credenciais no .env${NC}"
 
-# 13. Executar migrações
+# 15. Executar migrações
 echo -e "${YELLOW}📦 Executando migrações...${NC}"
 php artisan migrate --force --no-interaction || echo "⚠️  Erro ao executar migrações. Verifique a conexão com o banco de dados."
 
-# 14. Criar link simbólico para storage
+# 16. Criar link simbólico para storage
 echo -e "${YELLOW}🔗 Criando link simbólico para storage...${NC}"
 php artisan storage:link || true
 
-# 15. Otimizar Laravel
+# 17. Otimizar Laravel
 echo -e "${YELLOW}⚡ Otimizando Laravel...${NC}"
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 php artisan event:cache
 
-# 16. Configurar Nginx
+# 18. Configurar Nginx
 echo -e "${YELLOW}🌐 Configurando Nginx...${NC}"
 cp $APP_DIR/nginx.conf /etc/nginx/sites-available/$APP_NAME
 ln -sf /etc/nginx/sites-available/$APP_NAME /etc/nginx/sites-enabled/
@@ -221,21 +256,21 @@ rm -f /etc/nginx/sites-enabled/default
 # Testar configuração do Nginx
 nginx -t
 
-# 17. Configurar SSL com Let's Encrypt
+# 19. Configurar SSL com Let's Encrypt
 echo -e "${YELLOW}🔒 Configurando SSL...${NC}"
 read -p "Deseja configurar SSL com Let's Encrypt? (s/n): " SETUP_SSL
 if [ "$SETUP_SSL" = "s" ] || [ "$SETUP_SSL" = "S" ]; then
     certbot --nginx -d $DOMAIN --non-interactive --agree-tos --email admin@$DOMAIN || echo "⚠️  Erro ao configurar SSL. Configure manualmente depois."
 fi
 
-# 18. Reiniciar serviços
+# 20. Reiniciar serviços
 echo -e "${YELLOW}🔄 Reiniciando serviços...${NC}"
 systemctl restart php${PHP_VERSION}-fpm
 systemctl restart nginx
 systemctl enable php${PHP_VERSION}-fpm
 systemctl enable nginx
 
-# 19. Configurar firewall (se necessário)
+# 21. Configurar firewall (se necessário)
 echo -e "${YELLOW}🔥 Configurando firewall...${NC}"
 if command -v ufw &> /dev/null; then
     ufw allow 'Nginx Full'
