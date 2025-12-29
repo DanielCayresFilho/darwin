@@ -1,5 +1,14 @@
 # ⚡ DEPLOY RÁPIDO NO COOLIFY - 5 MINUTOS
 
+## ✅ IMPORTANTE: Auto-Detecção do Laravel
+
+Este repositório **NÃO tem** arquivo `nixpacks.toml`.
+O Coolify vai **detectar automaticamente** que é Laravel e configurar tudo!
+
+Você não precisa fazer nada além de seguir os passos abaixo. 🚀
+
+---
+
 ## 🎯 Método MAIS FÁCIL (Recomendado)
 
 ### 1️⃣ No Coolify, crie o App (2 min)
