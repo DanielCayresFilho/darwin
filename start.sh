@@ -55,15 +55,27 @@ fi
 
 echo "✅ Inicialização concluída!"
 
-# Verificar configuração do PHP-FPM
+# Verificar e corrigir configuração do PHP-FPM
 echo "🔍 Verificando configuração do PHP-FPM..."
-echo "📋 Configurações ativas:"
-grep -E "^(listen|listen.allowed_clients|clear_env)" /usr/local/etc/php-fpm.d/*.conf || echo "⚠️  Não foi possível ler configurações"
+echo "📋 Configurações ativas antes da correção:"
+grep -E "^(listen|listen.allowed_clients|clear_env)" /usr/local/etc/php-fpm.d/*.conf 2>/dev/null || echo "⚠️  Não foi possível ler configurações"
 
-# Garantir que está escutando na porta correta
-if ! grep -q "listen = 0.0.0.0:9000" /usr/local/etc/php-fpm.d/www.conf 2>/dev/null; then
-    echo "⚠️  Ajustando configuração do PHP-FPM..."
-    sed -i 's/listen = .*/listen = 0.0.0.0:9000/' /usr/local/etc/php-fpm.d/www.conf
+# Garantir que TODAS as configurações de listen apontem para 0.0.0.0:9000
+echo "🔧 Corrigindo todas as configurações de listen..."
+sed -i 's/listen = .*/listen = 0.0.0.0:9000/' /usr/local/etc/php-fpm.d/*.conf 2>/dev/null || true
+sed -i 's/listen = 9000/listen = 0.0.0.0:9000/' /usr/local/etc/php-fpm.d/*.conf 2>/dev/null || true
+sed -i 's/listen = \/run\/php\/php.*\.sock/listen = 0.0.0.0:9000/' /usr/local/etc/php-fpm.d/*.conf 2>/dev/null || true
+
+# Comentar listen.allowed_clients em todos os arquivos para permitir qualquer IP
+sed -i 's/^listen.allowed_clients =.*/;listen.allowed_clients = /' /usr/local/etc/php-fpm.d/*.conf 2>/dev/null || true
+
+echo "📋 Configurações ativas após correção:"
+grep -E "^(listen|listen.allowed_clients|clear_env)" /usr/local/etc/php-fpm.d/*.conf 2>/dev/null || echo "⚠️  Não foi possível ler configurações"
+
+# Verificar se está escutando na porta correta
+echo "🔍 Verificando se PHP-FPM está configurado corretamente..."
+if netstat -tlnp 2>/dev/null | grep -q ":9000" || ss -tlnp 2>/dev/null | grep -q ":9000"; then
+    echo "✅ Porta 9000 já está em uso (pode ser de uma execução anterior)"
 fi
 
 echo "🌐 Iniciando PHP-FPM na porta 9000..."

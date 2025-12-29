@@ -84,9 +84,13 @@ RUN chown -R www-data:www-data /var/www/html && \
 COPY php-fpm-custom.conf /usr/local/etc/php-fpm.d/zzz-custom.conf
 
 # Configurar PHP-FPM para trabalhar com Nginx do Coolify
+# Garantir que todas as configurações de listen apontem para 0.0.0.0:9000
 RUN sed -i 's/listen = .*/listen = 0.0.0.0:9000/' /usr/local/etc/php-fpm.d/www.conf && \
     sed -i 's/;clear_env = no/clear_env = no/' /usr/local/etc/php-fpm.d/www.conf && \
-    sed -i 's/^listen.allowed_clients =.*/;listen.allowed_clients = /' /usr/local/etc/php-fpm.d/www.conf || true
+    sed -i 's/^listen.allowed_clients =.*/;listen.allowed_clients = /' /usr/local/etc/php-fpm.d/www.conf && \
+    # Corrigir zz-docker.conf se existir
+    sed -i 's/listen = 9000/listen = 0.0.0.0:9000/' /usr/local/etc/php-fpm.d/zz-docker.conf 2>/dev/null || true && \
+    sed -i 's/listen = \/run\/php\/php.*\.sock/listen = 0.0.0.0:9000/' /usr/local/etc/php-fpm.d/*.conf 2>/dev/null || true
 
 # Copiar script de inicialização
 COPY start.sh /usr/local/bin/start.sh
