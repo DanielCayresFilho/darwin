@@ -205,8 +205,8 @@ return [
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
-        App\Providers\TelescopeServiceProvider::class,
-        Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class,
+        // App\Providers\TelescopeServiceProvider::class, // Registrado condicionalmente no AppServiceProvider
+        // Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class, // Registrado condicionalmente no AppServiceProvider
         App\Providers\ConfigServiceProvider::class,
         App\Providers\CurrencyServiceProvider::class,
         Maatwebsite\Excel\ExcelServiceProvider::class,
