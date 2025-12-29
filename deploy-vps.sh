@@ -121,6 +121,7 @@ echo -e "${YELLOW}⚙️  Configurando arquivo .env...${NC}"
 if [ ! -f $APP_DIR/.env ]; then
     if [ -f $APP_DIR/.env.example ]; then
         cp $APP_DIR/.env.example $APP_DIR/.env
+        echo -e "${YELLOW}  Arquivo .env criado a partir do .env.example${NC}"
     else
         # Criar .env básico se não existir .env.example
         cat > $APP_DIR/.env << EOF
@@ -141,9 +142,24 @@ SESSION_DRIVER=file
 CACHE_DRIVER=file
 QUEUE_CONNECTION=sync
 EOF
+        echo -e "${YELLOW}  Arquivo .env criado com configurações básicas${NC}"
     fi
-    echo -e "${YELLOW}⚠️  Arquivo .env criado. Verifique as configurações!${NC}"
+else
+    echo -e "${GREEN}  Arquivo .env já existe${NC}"
 fi
+
+# Atualizar configurações do banco de dados no .env (sobrescrever se necessário)
+echo -e "${YELLOW}  Atualizando configurações do banco de dados no .env...${NC}"
+sed -i 's/^DB_HOST=.*/DB_HOST=ucg084w44sw84kssgs00sg0g/' $APP_DIR/.env
+sed -i 's/^DB_PORT=.*/DB_PORT=3306/' $APP_DIR/.env
+sed -i 's/^DB_DATABASE=.*/DB_DATABASE=default/' $APP_DIR/.env
+sed -i 's/^DB_USERNAME=.*/DB_USERNAME=mysql/' $APP_DIR/.env
+sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=9ifRaRf16HTxrxdwEtB1vTnU78QAQ2kZOfDUscmKObbBp4VXwL9VIYMn28FsJ4A7/' $APP_DIR/.env
+sed -i 's/^APP_URL=.*/APP_URL=https:\/\/'${DOMAIN}'/' $APP_DIR/.env
+sed -i 's/^APP_ENV=.*/APP_ENV=production/' $APP_DIR/.env
+sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' $APP_DIR/.env
+
+echo -e "${GREEN}  ✅ Configurações do banco de dados atualizadas${NC}"
 
 # Gerar APP_KEY se não existir
 if ! grep -q "APP_KEY=base64:" $APP_DIR/.env 2>/dev/null; then
