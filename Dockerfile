@@ -86,7 +86,7 @@ COPY php-fpm-custom.conf /usr/local/etc/php-fpm.d/zzz-custom.conf
 # Configurar PHP-FPM para trabalhar com Nginx do Coolify
 RUN sed -i 's/listen = .*/listen = 0.0.0.0:9000/' /usr/local/etc/php-fpm.d/www.conf && \
     sed -i 's/;clear_env = no/clear_env = no/' /usr/local/etc/php-fpm.d/www.conf && \
-    sed -i 's/listen.allowed_clients = 127.0.0.1/;listen.allowed_clients = 0.0.0.0/' /usr/local/etc/php-fpm.d/www.conf || true
+    sed -i 's/^listen.allowed_clients =.*/;listen.allowed_clients = /' /usr/local/etc/php-fpm.d/www.conf || true
 
 # Copiar script de inicialização
 COPY start.sh /usr/local/bin/start.sh
