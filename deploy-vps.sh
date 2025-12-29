@@ -116,38 +116,70 @@ else
     cd $APP_DIR
 fi
 
-# 9. Instalar dependências do Composer
+# 9. Configurar arquivo .env ANTES de instalar dependências
+echo -e "${YELLOW}⚙️  Configurando arquivo .env...${NC}"
+if [ ! -f $APP_DIR/.env ]; then
+    if [ -f $APP_DIR/.env.example ]; then
+        cp $APP_DIR/.env.example $APP_DIR/.env
+    else
+        # Criar .env básico se não existir .env.example
+        cat > $APP_DIR/.env << EOF
+APP_NAME=Darwin
+APP_ENV=production
+APP_KEY=
+APP_DEBUG=false
+APP_URL=https://${DOMAIN}
+
+DB_CONNECTION=mysql
+DB_HOST=ucg084w44sw84kssgs00sg0g
+DB_PORT=3306
+DB_DATABASE=default
+DB_USERNAME=mysql
+DB_PASSWORD=9ifRaRf16HTxrxdwEtB1vTnU78QAQ2kZOfDUscmKObbBp4VXwL9VIYMn28FsJ4A7
+
+SESSION_DRIVER=file
+CACHE_DRIVER=file
+QUEUE_CONNECTION=sync
+EOF
+    fi
+    echo -e "${YELLOW}⚠️  Arquivo .env criado. Verifique as configurações!${NC}"
+fi
+
+# Gerar APP_KEY se não existir
+if ! grep -q "APP_KEY=base64:" $APP_DIR/.env 2>/dev/null; then
+    echo -e "${YELLOW}🔑 Gerando APP_KEY...${NC}"
+    cd $APP_DIR
+    php artisan key:generate --force || echo "⚠️  Erro ao gerar APP_KEY"
+fi
+
+# 10. Instalar dependências do Composer (sem scripts para evitar erro de conexão)
 echo -e "${YELLOW}📦 Instalando dependências do Composer...${NC}"
 cd $APP_DIR
-composer install --no-dev --optimize-autoloader --no-interaction
+COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
-# 10. Instalar dependências do NPM e compilar assets
+# Agora gerar autoloader e executar scripts (com .env configurado)
+echo -e "${YELLOW}📦 Gerando autoloader e executando scripts...${NC}"
+composer dump-autoload --optimize --no-interaction
+
+# 11. Instalar dependências do NPM e compilar assets
 echo -e "${YELLOW}📦 Instalando dependências do NPM e compilando assets...${NC}"
 npm ci --production=false
 npm run production
 
-# 11. Configurar permissões
+# 12. Configurar permissões
 echo -e "${YELLOW}🔐 Configurando permissões...${NC}"
 chown -R $APP_USER:$APP_USER $APP_DIR
 chmod -R 755 $APP_DIR
 chmod -R 775 $APP_DIR/storage
 chmod -R 775 $APP_DIR/bootstrap/cache
 
-# 12. Configurar arquivo .env
-echo -e "${YELLOW}⚙️  Configurando arquivo .env...${NC}"
-if [ ! -f $APP_DIR/.env ]; then
-    cp $APP_DIR/.env.example $APP_DIR/.env
-    echo -e "${YELLOW}⚠️  Arquivo .env criado. Configure as variáveis de ambiente antes de continuar!${NC}"
-    echo "  Pressione Enter após configurar o .env..."
-    read
-fi
-
-# Gerar APP_KEY se não existir
-php artisan key:generate --force || true
+# 13. Testar conexão com banco de dados
+echo -e "${YELLOW}🔍 Testando conexão com banco de dados...${NC}"
+php artisan db:show --quiet 2>/dev/null && echo "✅ Conexão com banco OK" || echo -e "${YELLOW}⚠️  Não foi possível conectar ao banco. Verifique as credenciais no .env${NC}"
 
 # 13. Executar migrações
 echo -e "${YELLOW}📦 Executando migrações...${NC}"
-php artisan migrate --force --no-interaction
+php artisan migrate --force --no-interaction || echo "⚠️  Erro ao executar migrações. Verifique a conexão com o banco de dados."
 
 # 14. Criar link simbólico para storage
 echo -e "${YELLOW}🔗 Criando link simbólico para storage...${NC}"
