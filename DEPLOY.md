@@ -177,6 +177,15 @@ docker compose -f docker-compose.prod.yml restart nginx
 
 ---
 
+## 📝 Nota Importante sobre nginx.conf
+
+O arquivo `nginx.conf.example` é usado apenas para deploy standalone com Docker Compose.
+
+- **Para Coolify**: Ignore este arquivo, o Coolify gerencia o Nginx automaticamente
+- **Para deploy standalone**: O docker-compose.prod.yml já está configurado para usar nginx.conf.example
+
+---
+
 ## 🛠️ Comandos Úteis
 
 ### Gerenciar containers
