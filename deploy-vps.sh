@@ -159,7 +159,9 @@ COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-
 
 # Agora gerar autoloader e executar scripts (com .env configurado)
 echo -e "${YELLOW}📦 Gerando autoloader e executando scripts...${NC}"
-composer dump-autoload --optimize --no-interaction
+# Executar package:discover manualmente e ignorar erros do Telescope
+php artisan package:discover --ansi || echo "⚠️  Aviso: Alguns pacotes não puderam ser descobertos (normal se Telescope não estiver instalado)"
+composer dump-autoload --optimize --no-interaction --no-scripts || composer dump-autoload --optimize --no-interaction
 
 # 11. Instalar dependências do NPM e compilar assets
 echo -e "${YELLOW}📦 Instalando dependências do NPM e compilando assets...${NC}"
